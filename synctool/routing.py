@@ -5,7 +5,7 @@ except ImportError:
 
 from django.conf import settings
 from django.conf.urls import url
-from django.core.management.commands.dumpdata import Command
+from django.core.management import call_command
 from django.core.serializers import serialize
 from django.http import HttpResponse
 
@@ -38,11 +38,10 @@ class Route(object):
 
     def app(self, path, label):
         def view(request):
-            cmd = Command()
-            cmd.stdout = StringIO()
-            cmd.handle(label, format="json", exclude=[])
+            stdout = StringIO()
+            call_command('dumpdata', label, stdout=stdout)
             return HttpResponse(
-                content=cmd.stdout.getvalue(),
+                content=stdout.getvalue(),
                 content_type="application/json",
             )
 
