@@ -26,6 +26,9 @@ def decode(value):
 
 def require_token(token):
     def decorator(func):
+        if not token:
+            return func
+
         def inner(request, *args, **kwargs):
             key = request.META.get("HTTP_AUTHORIZATION")
             username, password = decode_header(key)

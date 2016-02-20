@@ -16,7 +16,7 @@ class Route(object):
 
     def __init__(self, *args, **kwargs):
         self.api_token = (
-            kwargs.get("api_token") or settings.SYNCTOOL_API_TOKEN
+            kwargs.get("api_token") or getattr(settings, 'SYNCTOOL_API_TOKEN', None)
         )
         self.urlpatterns = []
 
