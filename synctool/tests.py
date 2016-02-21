@@ -22,6 +22,7 @@ IMG = join(ROOT, "img.gif")
 
 
 route = Route(api_token="token")
+route_noauth = Route(api_token=None)
 
 
 def authorization(token="token"):
@@ -34,6 +35,12 @@ def authorization(token="token"):
 
 
 blog_app = route.app("blogs", "synctool")
+blog_app_noauth = route_noauth.app("blogs", "synctool")
+
+
+@route_noauth.queryset("blog-single")
+def blog_single_noauth():
+    return Blog.objects.all()
 
 
 @route.queryset("blog-single")
@@ -111,6 +118,72 @@ class RouteTest(TestCase):
 
         response = self.client.get("/blog-single/")
         self.assertEqual(response.status_code, 401)
+
+
+class RouteNoAuthTest(TestCase):
+    urls = route_noauth.urlpatterns
+
+    def test_single(self):
+        blog = Blog.objects.create(slug="blog")
+
+        request = RequestFactory().get("/")
+        response = blog_single(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response._headers["content-type"][1],
+            "application/json",
+        )
+
+        data = deserialize("json", response.content)
+        self.assertEqual(next(data).object, blog)
+
+    def test_multiple(self):
+        blog = Blog.objects.create(slug="blog")
+        post = Post.objects.create(blog=blog, slug="slug")
+
+        request = RequestFactory().get("/")
+        response = blog_multiple(request)
+
+        self.assertEqual(response.status_code, 200)
+
+        data = deserialize("json", response.content)
+
+        self.assertEqual(next(data).object, blog)
+        self.assertEqual(next(data).object, post)
+
+    def test_app(self):
+        blog = Blog.objects.create(slug="blog")
+        post = Post.objects.create(blog=blog, slug="slug")
+
+        request = RequestFactory().get("/")
+        response = blog_app(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response._headers["content-type"][1],
+            "application/json",
+        )
+
+        data = deserialize("json", response.content)
+
+        self.assertEqual(next(data).object, blog)
+        self.assertEqual(next(data).object, post)
+
+    def test_bad_authorization(self):
+        blog = Blog.objects.create(slug="blog")
+        request = RequestFactory().get("/")
+        request.META["HTTP_AUTHORIZATION"] = authorization(token="bad")
+
+        response = self.client.get("/blog-single/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response._headers["content-type"][1],
+            "application/json",
+        )
+
+        data = deserialize("json", response.content)
+        self.assertEqual(next(data).object, blog)
 
 
 class Response(object):

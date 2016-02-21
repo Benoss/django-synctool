@@ -18,7 +18,12 @@ class Route(object):
         self.api_token = (
             kwargs.get("api_token") or getattr(settings, 'SYNCTOOL_API_TOKEN', None)
         )
-        self.urlpatterns = []
+        self._urlpatterns = []
+
+    @property
+    def urlpatterns(self):
+        # Django 1.9 requires urlpatterns to be hashable
+        return tuple(self._urlpatterns)
 
     def queryset(self, path):
         def decorator(func):
@@ -51,7 +56,7 @@ class Route(object):
 
     def add_url(self, path, func):
         auth = require_token(token=self.api_token)
-        self.urlpatterns.append(
+        self._urlpatterns.append(
             url(
                 regex="^%s/?$" % path,
                 view=auth(func),
