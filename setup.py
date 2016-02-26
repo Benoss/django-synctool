@@ -26,8 +26,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        "Django>=1.7",
-        "mock",
+        "Django>=1.8",
         "requests",
     ],
     classifiers=[

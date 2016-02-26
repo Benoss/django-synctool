@@ -1,11 +1,5 @@
-language: python
 sudo: false
-python:
-  - 2.7
-  - 3.3
-  - 3.4
+language: python
 install:
-  - pip install Pillow
-  - pip install .
-script:
-  - python runtests.py
+  - travis_retry pip install tox
+script: tox
