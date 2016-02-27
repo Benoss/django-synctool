@@ -1,4 +1,5 @@
 import os
+from calendar import timegm
 from errno import EEXIST
 from os.path import isdir
 
@@ -8,6 +9,7 @@ from django.core.management.color import no_style
 from django.core.serializers import deserialize
 from django.db import connection
 from django.db.models import ImageField
+from django.utils.http import http_date
 
 
 def puts(value):
@@ -21,11 +23,20 @@ def puts(value):
 
 
 def sync_data(url, api_token, clean=False, reset=True, images=False,
-        media_url=None):
+              media_url=None, last_modified=None):
 
     puts("Loading data from {0}".format(url))
-    response = requests.get(url, auth=(api_token, ""))
+    headers = {}
+    if last_modified is not None:
+        last_mod_str = http_date(timegm(last_modified.utctimetuple()))
+        headers['if-modified-since'] = last_mod_str
+
+    response = requests.get(url, auth=(api_token, ""), headers=headers)
     if not response.ok:
+        if response.status_code == requests.codes.not_modified:
+            puts('Everything up to date')
+            return
+
         puts(response.content)
 
         raise RuntimeError(
