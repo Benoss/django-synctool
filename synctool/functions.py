@@ -32,7 +32,7 @@ def sync_data(url, api_token, clean=False, reset=True, images=False,
         headers['if-modified-since'] = last_mod_str
 
     response = requests.get(url, auth=(api_token, ""), headers=headers)
-    if not response.ok:
+    if response.status_code != requests.codes.ok:
         if response.status_code == requests.codes.not_modified:
             puts('Everything up to date')
             return
