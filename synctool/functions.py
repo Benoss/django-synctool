@@ -7,7 +7,7 @@ import requests
 from django.apps import apps
 from django.core.management.color import no_style
 from django.core.serializers import deserialize
-from django.db import connection
+from django.db import connection, connections
 from django.db.models import ImageField
 from django.utils.http import http_date
 
@@ -23,7 +23,7 @@ def puts(value):
 
 
 def sync_data(url, api_token, clean=False, reset=True, images=False,
-              media_url=None, last_modified=None):
+              media_url=None, last_modified=None, database='default'):
 
     puts("Loading data from {0}".format(url))
     headers = {}
@@ -69,7 +69,7 @@ def sync_data(url, api_token, clean=False, reset=True, images=False,
 
     if reset:
         for app_label in app_labels:
-            reset_sequence(app_label)
+            reset_sequence(app_label, database)
 
     if images:
         for model in models:
@@ -85,7 +85,7 @@ def get_reset_command(app_label):
     return "\n".join(statements)
 
 
-def reset_sequence(app_label):
+def reset_sequence(app_label, database='default'):
     """
     Reset the primary key sequence for the tables in an application.
     This is necessary if any local edits have happened to the table.
@@ -93,7 +93,7 @@ def reset_sequence(app_label):
 
     puts("Resetting primary key sequence for {0}".format(app_label))
 
-    cursor = connection.cursor()
+    cursor = connections[database].cursor()
     cmd = get_reset_command(app_label)
     cursor.execute(cmd)
 
